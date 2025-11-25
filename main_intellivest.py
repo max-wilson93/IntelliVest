@@ -1,7 +1,5 @@
 import numpy as np
 import time
-
-# Import our custom modules
 from market_loader import MarketLoader
 from fourier_optics import FourierOptics
 from quantum_cortex import QuantumCortex
@@ -9,86 +7,66 @@ from csp_solver import ConstraintSolver
 from adversarial_search import AdversarialGame
 from portfolio_manager import PortfolioManager
 
-def run_simulation():
-    print("=== INTELLIVEST: INITIALIZING SYSTEM ===")
-    
-    # 1. DEFINE USER CONSTRAINTS (The "Rulebook")
-    user_rules = {
-        'max_price_per_share': 500,
-        'max_risk_volatility': 0.05,
-        'excluded_sectors': ['Fossil Fuels', 'Gambling']
-    }
-    csp = ConstraintSolver(user_rules)
-    
-    # 2. DEFINE MARKET UNIVERSE (Mock Metadata for filtering)
-    # In a real app, this would come from an API. 
-    # Here we define NVDA as valid and XOM (Exxon) as invalid to test CSP.
-    raw_universe = [
-        {'ticker': 'NVDA', 'price': 130, 'sector': 'Tech', 'volatility': 0.02},
-        {'ticker': 'XOM',  'price': 110, 'sector': 'Fossil Fuels', 'volatility': 0.01}
-    ]
-    
-    # 3. RUN CONSTRAINT SOLVER
-    valid_tickers = csp.filter_universe(raw_universe)
-    
-    if not valid_tickers:
-        print("No stocks satisfied your constraints. Exiting.")
-        return
+def run_simulation(config=None):
+    # Default Config (if running standalone)
+    if config is None:
+        config = {
+            'ticker': 'NVDA',
+            'initial_capital': 10000,
+            'lookback_window': 60,
+            'label_threshold': 0.015,
+            'buy_threshold': 20,
+            'sell_threshold': -20,
+            'search_depth': 3,
+        }
 
-    # 4. FETCH REAL DATA FOR VALID TICKERS
-    # This uses your corrected market_loader.py
-    loader = MarketLoader(valid_tickers)
-    print("\n[Data] Fetching market spectrograms...")
-    X_data, y_data = loader.fetch_data()
+    # 1. SETUP
+    csp = ConstraintSolver({}) 
+    pm = PortfolioManager(initial_capital=config['initial_capital'])
     
-    # 5. INITIALIZE AI MODULES
-    # Scout (The Brain) - Expects 3136 inputs (from Fourier Optics)
-    scout = QuantumCortex(num_inputs=3136, num_classes=3, neurons_per_class=15)
+    # 2. DATA (Real Prices)
+    loader = MarketLoader([config['ticker']], 
+                          lookback_window=config['lookback_window'],
+                          label_threshold=config['label_threshold'])
+    try:
+        X_data, y_data, real_prices = loader.fetch_data()
+    except Exception as e:
+        print(f"Data Error: {e}")
+        return {'final_value': 0, 'trades': 0, 'return_pct': 0.0}
+
+    # 3. AI MODULES
+    scout = QuantumCortex(3136, 3, 15, config=config)
     optics = FourierOptics()
-    
-    # Strategist (The Search)
     game = AdversarialGame(scout)
     
-    # Manager (The Ledger)
-    pm = PortfolioManager(initial_capital=10000)
-    
-    # 6. RUN THE SIMULATION LOOP
-    print(f"\n=== STARTING SIMULATION ({len(X_data)} Days) ===")
-    
-    for day_idx, (market_img, label) in enumerate(zip(X_data, y_data)):
-        
-        # A. PRE-PROCESSING (Fourier Optics)
-        # Reshape flat vector back to 28x28
+    # 4. SIMULATION LOOP
+    for i, (market_img, label) in enumerate(zip(X_data, y_data)):
         img_2d = market_img.reshape(28, 28)
-        
-        # KEY STEP: Extract 3136 features from the 784 pixel image
         features = optics.apply(img_2d)
         
-        # B. STRATEGY (Adversarial Search)
-        # FIX: Pass 'features' (3136 size), NOT 'img_2d' (784 size)
-        best_move = game.get_best_move(features)
+        best_move = game.get_best_move(features, 
+                                       buy_thresh=config['buy_threshold'],
+                                       sell_thresh=config['sell_threshold'],
+                                       search_depth=config['search_depth'])
         
-        # C. EXECUTION (Portfolio Manager)
-        # Mocking the price movement for the prototype simulation
-        # In production, you would align this with the 'Close' price of that day.
-        current_mock_price = 100 + (day_idx * 0.2) + (np.random.randn() * 2)
+        current_price = real_prices[i]
+        pm.execute(best_move, config['ticker'], current_price)
         
-        # Print status every 50 days to keep log clean
-        if day_idx % 50 == 0:
-            print(f"\n[Day {day_idx}] AI Signal: {best_move} | Price: ${current_mock_price:.2f}")
-            
-        pm.execute(best_move, valid_tickers[0], current_mock_price)
-        
-        # D. LEARNING (Online Hebbian Update)
-        # The Scout learns from the "Truth" (label) of what actually happened
-        # We pass 'features' here too
+        # Learn
         scout.process_image(features, label, train=True)
 
-    # 7. FINAL REPORT
-    final_val = pm.get_total_value({valid_tickers[0]: 150}) # Assuming final price $150
-    print("\n=== SIMULATION COMPLETE ===")
-    print(f"Final Portfolio Value: ${final_val:.2f}")
-    print(f"Total Trades: {len(pm.history)}")
+    # 5. RESULTS
+    final_price = real_prices[-1]
+    final_val = pm.get_total_value({config['ticker']: final_price})
+    return_pct = ((final_val - config['initial_capital']) / config['initial_capital']) * 100
+    
+    return {
+        'final_value': final_val,
+        'trades': len(pm.history),
+        'return_pct': return_pct
+    }
 
 if __name__ == "__main__":
-    run_simulation()
+    # Single Run Test
+    res = run_simulation()
+    print(f"Final Value: ${res['final_value']:.2f} ({res['return_pct']:.2f}%)")

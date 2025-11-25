@@ -11,9 +11,10 @@ class PortfolioManager:
                 self.cash -= current_price
                 self.holdings[ticker] = self.holdings.get(ticker, 0) + 1
                 self.history.append(f"BUY {ticker} @ ${current_price:.2f}")
-                print(f" -> EXECUTE: Bought 1 {ticker} at ${current_price:.2f}")
+                # print(f" -> EXECUTE: Bought 1 {ticker} at ${current_price:.2f}")
             else:
-                print(f" -> EXECUTE: Insufficient funds to buy {ticker}")
+                pass
+                # print(f" -> EXECUTE: Insufficient funds to buy {ticker}")
                 
         elif action == 'SELL':
             # Sell 1 share if we have it
@@ -21,12 +22,14 @@ class PortfolioManager:
                 self.holdings[ticker] -= 1
                 self.cash += current_price
                 self.history.append(f"SELL {ticker} @ ${current_price:.2f}")
-                print(f" -> EXECUTE: Sold 1 {ticker} at ${current_price:.2f}")
+                # print(f" -> EXECUTE: Sold 1 {ticker} at ${current_price:.2f}")
             else:
-                print(f" -> EXECUTE: No holdings to sell for {ticker}")
+                pass
+                # print(f" -> EXECUTE: No holdings to sell for {ticker}")
         
         else:
-            print(" -> EXECUTE: Hold")
+            pass
+            # print(" -> EXECUTE: Hold")
 
     def get_total_value(self, current_prices):
         """
