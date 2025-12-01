@@ -4,7 +4,7 @@
 
 By modeling financial markets as interfering waves rather than random walks, IntelliVest detects "topological" market regimes (Bull, Bear, Volatile) and uses an **Adversarial Search Agent (Minimax)** to execute robust, risk-managed trading strategies.
 
-## 🚀 Key Features
+## Key Features
 
 * **Quantum-Holographic Perception:** Uses Fourier Optics and complex-valued wavefunctions to detect market patterns as "interference" in the frequency domain.
 * **Specialist Squad Architecture:** Instead of a "one-size-fits-all" model, IntelliVest trains unique "DNA" (hyperparameters) for each asset, optimizing for its specific volatility profile.
@@ -14,7 +14,7 @@ By modeling financial markets as interfering waves rather than random walks, Int
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 The system is composed of three core modules:
 
@@ -34,7 +34,7 @@ The system is composed of three core modules:
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 * Python 3.10+
@@ -99,7 +99,7 @@ For detailed analysis, see the `final_analysis.py` output.
 
 ---
 
-## 📂 File Structure
+## File Structure
 
 * `quantum_cortex.py`: The core physics engine (Complex-valued NN).
 * `fourier_optics.py`: Image processing for market spectrograms.
