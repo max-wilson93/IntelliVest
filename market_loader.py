@@ -11,12 +11,6 @@ class MarketLoader:
         self.threshold = label_threshold
 
     def fetch_data(self):
-        """
-        Downloads data and returns:
-        1. images (Spectrograms for the AI)
-        2. labels (Truth for training)
-        3. prices (Real closing prices for the simulation execution)
-        """
         print(f"Fetching data for: {self.tickers}...")
         
         # Download data
@@ -54,17 +48,14 @@ class MarketLoader:
         
         images = []
         labels = []
-        sim_prices = [] # The price at the moment of decision
+        sim_prices = []
         
-        # Sliding Window
         for i in range(len(returns) - self.lookback - 5):
             window = returns[i : i + self.lookback]
             future_return = np.sum(returns[i + self.lookback : i + self.lookback + 5])
             
-            # Capture the price at the END of this lookback window (Decision Time)
             current_sim_price = prices[i + self.lookback]
             
-            # --- SPECTROGRAM ---
             f, t, Sxx = signal.spectrogram(window, fs=1.0, nperseg=15, noverlap=10)
             Sxx = np.log(Sxx + 1e-10)
             s_min, s_max = np.min(Sxx), np.max(Sxx)
@@ -74,7 +65,6 @@ class MarketLoader:
             img_2d = resize(Sxx, (28, 28), mode='reflect', anti_aliasing=True)
             img_flat = np.asarray(img_2d).flatten()
             
-            # --- LABELS (Dynamic Threshold) ---
             if future_return > self.threshold:   label = 2 # Bull
             elif future_return < -self.threshold: label = 0 # Bear
             else:                                 label = 1 # Neutral

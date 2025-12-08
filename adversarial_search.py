@@ -3,6 +3,7 @@ import numpy as np
 class AdversarialGame:
     def __init__(self, market_scout_model):
         self.scout = market_scout_model
+        # Actions: Buy, Hold, Sell (Long Only)
         self.actions = ['BUY', 'HOLD', 'SELL']
 
     def evaluate_state(self, market_state_image):
@@ -19,7 +20,7 @@ class AdversarialGame:
         if depth == 0:
             return self.evaluate_state(market_image)
 
-        if is_maximizing: # The Investor
+        if is_maximizing:
             best_val = -np.inf
             for _ in self.actions:
                 val = self.minimax(market_image, depth - 1, False, alpha, beta)
@@ -28,7 +29,7 @@ class AdversarialGame:
                 if beta <= alpha: break
             return best_val
             
-        else: # The Market
+        else:
             best_val = np.inf
             for _ in self.actions:
                 val = self.minimax(market_image, depth - 1, True, alpha, beta)
@@ -38,9 +39,6 @@ class AdversarialGame:
             return best_val
 
     def get_best_move(self, current_spectrogram, buy_thresh=20, sell_thresh=-20, search_depth=3):
-        """
-        Dynamic Thresholds for Monte Carlo Optimization.
-        """
         score = self.minimax(current_spectrogram, depth=search_depth, is_maximizing=True, alpha=-np.inf, beta=np.inf)
         
         if score > buy_thresh: return 'BUY'

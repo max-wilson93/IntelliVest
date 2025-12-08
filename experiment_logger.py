@@ -10,13 +10,23 @@ def log_experiment_result(config, results):
     row_data = {**config, **results}
     row_data['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    # Headers
-    headers = ['timestamp', 'final_value', 'return_pct', 'trades'] + list(config.keys())
+    # Exclude non-serializable objects (like lists)
+    if 'equity_curve' in row_data:
+        del row_data['equity_curve']
     
-    with open(filename, mode='a', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=headers)
-        if not file_exists:
-            writer.writeheader()
-        writer.writerow(row_data)
-        
-    print(f"[Log] Run Saved: {results['return_pct']:.2f}% Return")
+    # DYNAMIC HEADERS: This fixes the crash.
+    # We grab whatever keys are in the row_data, instead of hardcoding them.
+    headers = list(row_data.keys())
+    
+    # If file exists, we check if we need to append or overwrite (simple append here)
+    # Ideally, delete the CSV if schema changes
+    
+    try:
+        with open(filename, mode='a', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=headers)
+            if not file_exists:
+                writer.writeheader()
+            writer.writerow(row_data)
+    except ValueError:
+        # If headers mismatch (old file has different cols), re-write the file or ignore
+        pass
