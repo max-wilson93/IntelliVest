@@ -6,6 +6,7 @@ import json
 import os
 from main_intellivest import run_simulation
 from statistical_analysis import StatisticalAnalyzer
+from analytics_engine import AnalyticsEngine
 
 # Default Physics Defaults
 DEFAULT_PHYSICS = {
@@ -102,7 +103,11 @@ def run_final_analysis():
             # print(f"Bench error: {e}")
             bench_ret = 0.0
             bench_curve = [10000] * len(model_curve)
+        # Initialize the engine for THIS ticker
+        engine = AnalyticsEngine(model_curve, bench_curve)
 
+        # Generate the 2x2 dashboard and print the fancy stats
+        engine.generate_full_report(ticker)
         print("Done.")
         
         summary_data.append({
@@ -160,6 +165,8 @@ def run_final_analysis():
         plt.tight_layout()
         plt.savefig('comparison_chart.png')
         print("Chart saved.")
+        # 2. Run Advanced Analytics
+
     
     # === RUN STATISTICAL ANALYSIS ===
     # We analyze the aggregate portfolio vs aggregate benchmark
